@@ -1,9 +1,16 @@
-FROM plugins/base:multiarch
+FROM golang:alpine as build
 
-LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" \
-  org.label-schema.name="Drone Webhook" \
-  org.label-schema.vendor="Drone.IO Community" \
-  org.label-schema.schema-version="1.0"
+WORKDIR /app
+ADD . .
+RUN export GOOS=linux
+RUN export GOARCH=amd64
+RUN export CGO_ENABLED=0
+RUN export GO111MODULE=on
 
-ADD release/linux/amd64/drone-webhook /bin/
+RUN go build
+
+FROM alpine
+RUN apk add --no-cache ca-certificates
+
+COPY --from=build /app/drone-webhook /bin/
 ENTRYPOINT ["/bin/drone-webhook"]
